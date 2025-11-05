@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/profiles") // Đặt tiền tố chung ở đây
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "*")
 public class ProfileController {
 
     private final ProfileRepository profileRepository;
