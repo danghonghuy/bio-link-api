@@ -1,5 +1,5 @@
 # Sử dụng một nền tảng Java 21 gọn nhẹ
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jdk-alpine
 
 # Tạo một thư mục tên 'app' bên trong container
 WORKDIR /app
