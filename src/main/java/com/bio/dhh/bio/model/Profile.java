@@ -34,6 +34,24 @@ public class Profile {
 
     private Integer backgroundImageOpacity;
 
+    // === CÀI ĐẶT GIAO DIỆN MỚI ===
+    @Column(length = 50)
+    private String buttonStyle; // e.g., 'rounded-full', 'rounded-lg', 'rounded-none'
+
+    @Column(length = 50)
+    private String font; // e.g., 'font-inter', 'font-roboto-mono'
+
+    // === CÀI ĐẶT SEO MỚI ===
+    @Column(length = 120)
+    private String seoTitle;
+
+    @Column(length = 255)
+    private String seoDescription;
+
+    @Column(length = 1000)
+    private String socialImage;
+
+
     @Column(nullable = false, unique = true)
     private String userId;
 

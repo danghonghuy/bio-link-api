@@ -29,4 +29,20 @@ public class ProfileUpdateRequestDTO {
     @Min(value = 0, message = "Độ mờ tối thiểu là 0")
     @Max(value = 100, message = "Độ mờ tối đa là 100")
     private Integer backgroundImageOpacity;
+
+    // ▼▼▼ DÁN 5 DÒNG NÀY VÀO ▼▼▼
+    @Size(max = 50)
+    private String buttonStyle;
+
+    @Size(max = 50)
+    private String font;
+
+    @Size(max = 120)
+    private String seoTitle;
+
+    @Size(max = 255)
+    private String seoDescription;
+
+    @Size(max = 1000)
+    private String socialImage;
 }
