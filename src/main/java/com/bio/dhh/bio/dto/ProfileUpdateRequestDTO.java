@@ -1,5 +1,7 @@
 package com.bio.dhh.bio.dto;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -21,7 +23,10 @@ public class ProfileUpdateRequestDTO {
     @Pattern(regexp = "^[a-z0-9]+(?:-[a-z0-9]+)*$", message = "URL chỉ được chứa chữ thường, số và dấu gạch ngang")
     private String slug;
 
-    // ▼▼▼ THÊM TRƯỜNG MỚI ▼▼▼
     @Size(max = 255, message = "Lựa chọn background không hợp lệ")
     private String background;
+
+    @Min(value = 0, message = "Độ mờ tối thiểu là 0")
+    @Max(value = 100, message = "Độ mờ tối đa là 100")
+    private Integer backgroundImageOpacity;
 }

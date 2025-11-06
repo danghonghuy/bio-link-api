@@ -29,9 +29,10 @@ public class Profile {
     @Column(length = 1000)
     private String avatarUrl;
 
-    // ▼▼▼ THÊM TRƯỜNG MỚI ▼▼▼
     @Column(length = 255)
     private String background;
+
+    private Integer backgroundImageOpacity;
 
     @Column(nullable = false, unique = true)
     private String userId;
