@@ -39,7 +39,6 @@ public class ProfileController {
 
     private String generateSlug(String input) {
         if (input == null || input.isEmpty()) {
-            // Trả về một chuỗi ngẫu nhiên nếu không có input
             return "profile-" + System.currentTimeMillis();
         }
         String nowhitespace = WHITESPACE.matcher(input).replaceAll("-");
@@ -64,6 +63,7 @@ public class ProfileController {
             profileToUpdate.setDisplayName(profileData.getDisplayName());
             profileToUpdate.setDescription(profileData.getDescription());
             profileToUpdate.setSlug(profileData.getSlug());
+            profileToUpdate.setBackground(profileData.getBackground()); // <-- THÊM DÒNG NÀY
 
             return profileRepository.save(profileToUpdate);
         } else {
@@ -71,6 +71,7 @@ public class ProfileController {
             newProfile.setUserId(profileData.getUserId());
             newProfile.setDisplayName(profileData.getDisplayName());
             newProfile.setDescription(profileData.getDescription());
+            newProfile.setBackground(profileData.getBackground()); // <-- THÊM DÒNG NÀY
 
             String baseSlug = generateSlug(profileData.getDisplayName());
             String finalSlug = baseSlug;
@@ -85,6 +86,7 @@ public class ProfileController {
         }
     }
 
+    // Các hàm còn lại không đổi
     @PostMapping("/avatar")
     public Profile updateAvatar(@RequestBody Map<String, String> payload) {
         String userId = payload.get("userId");

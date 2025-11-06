@@ -29,6 +29,10 @@ public class Profile {
     @Column(length = 1000)
     private String avatarUrl;
 
+    // ▼▼▼ THÊM TRƯỜNG MỚI ▼▼▼
+    @Column(length = 255)
+    private String background;
+
     @Column(nullable = false, unique = true)
     private String userId;
 
@@ -36,13 +40,12 @@ public class Profile {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    // ▼▼▼ THÊM QUAN HỆ MỚI ▼▼▼
     @OneToMany(
             mappedBy = "profile",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
-            fetch = FetchType.EAGER // Tải các block cùng lúc với profile
+            fetch = FetchType.EAGER
     )
-    @OrderBy("blockOrder ASC") // Luôn trả về danh sách đã sắp xếp
+    @OrderBy("blockOrder ASC")
     private List<ContentBlock> blocks = new ArrayList<>();
 }
