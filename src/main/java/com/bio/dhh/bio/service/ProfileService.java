@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
@@ -40,13 +41,22 @@ public class ProfileService {
         this.clickLogRepository = clickLogRepository;
     }
 
+    @Transactional
     public void recordProfileView(String slug) {
         Profile profile = profileRepository.findBySlug(slug)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile không tồn tại"));
 
+        // Ghi nhận view vào ViewLog (cho analytics chi tiết)
         ViewLog viewLog = new ViewLog();
         viewLog.setProfile(profile);
         viewLogRepository.save(viewLog);
+
+        // Tăng counter views trong Profile (cho hiển thị nhanh)
+        if (profile.getViews() == null) {
+            profile.setViews(0L);
+        }
+        profile.setViews(profile.getViews() + 1);
+        profileRepository.save(profile);
     }
 
     public AnalyticsDTO getAnalytics(String userId) {

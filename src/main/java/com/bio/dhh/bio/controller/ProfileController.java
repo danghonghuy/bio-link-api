@@ -2,6 +2,7 @@ package com.bio.dhh.bio.controller;
 
 import com.bio.dhh.bio.dto.AnalyticsDTO;
 import com.bio.dhh.bio.dto.ProfileUpdateRequestDTO;
+import com.bio.dhh.bio.dto.SettingsUpdateDTO;
 import com.bio.dhh.bio.model.ContentBlock;
 import com.bio.dhh.bio.model.Profile;
 import com.bio.dhh.bio.repository.ClickCount;
@@ -99,7 +100,33 @@ public class ProfileController {
         }
     }
 
-    // ... tất cả các endpoint khác không đổi
+    // === ENDPOINT MỚI: CẬP NHẬT CÀI ĐẶT ===
+    @PostMapping("/settings")
+    public ResponseEntity<Map<String, Object>> updateSettings(@RequestBody SettingsUpdateDTO settingsDTO) {
+        Profile profile = profileRepository.findByUserId(settingsDTO.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy profile"));
+
+        if (settingsDTO.getShowStats() != null) {
+            profile.setShowStats(settingsDTO.getShowStats());
+        }
+        if (settingsDTO.getEmailNotifications() != null) {
+            profile.setEmailNotifications(settingsDTO.getEmailNotifications());
+        }
+        if (settingsDTO.getAnalyticsEnabled() != null) {
+            profile.setAnalyticsEnabled(settingsDTO.getAnalyticsEnabled());
+        }
+        if (settingsDTO.getPublicProfile() != null) {
+            profile.setPublicProfile(settingsDTO.getPublicProfile());
+        }
+
+        profileRepository.save(profile);
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Cập nhật cài đặt thành công"
+        ));
+    }
+
     @PostMapping("/{slug}/view")
     public ResponseEntity<Void> recordProfileView(@PathVariable String slug) {
         profileService.recordProfileView(slug);
@@ -116,29 +143,43 @@ public class ProfileController {
     public Profile updateAvatar(@RequestBody Map<String, String> payload) {
         String userId = payload.get("userId");
         String avatarUrl = payload.get("avatarUrl");
-        if (userId == null || avatarUrl == null) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId và avatarUrl là bắt buộc."); }
-        Profile profile = profileRepository.findByUserId(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy profile"));
+        if (userId == null || avatarUrl == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId và avatarUrl là bắt buộc.");
+        }
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy profile"));
         profile.setAvatarUrl(avatarUrl);
         return profileRepository.save(profile);
     }
 
     @GetMapping("/mine/{userId}")
     public ResponseEntity<Profile> getMyProfile(@PathVariable String userId) {
-        return profileRepository.findByUserId(userId).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return profileRepository.findByUserId(userId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{slug}")
     public ResponseEntity<Profile> getProfileBySlug(@PathVariable String slug) {
-        return profileRepository.findBySlug(slug).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return profileRepository.findBySlug(slug)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/stats/{userId}")
     public ResponseEntity<Map<Long, Long>> getStats(@PathVariable String userId) {
         Profile profile = profileRepository.findByUserId(userId).orElse(null);
-        if (profile == null) { return ResponseEntity.notFound().build(); }
-        if (profile.getBlocks() == null || profile.getBlocks().isEmpty()) { return ResponseEntity.ok(Map.of()); }
-        List<Long> blockIds = profile.getBlocks().stream().map(ContentBlock::getId).collect(Collectors.toList());
-        Map<Long, Long> stats = clickLogRepository.countByBlockIdIn(blockIds).stream().collect(Collectors.toMap(ClickCount::getBlockId, ClickCount::getCount));
+        if (profile == null) {
+            return ResponseEntity.notFound().build();
+        }
+        if (profile.getBlocks() == null || profile.getBlocks().isEmpty()) {
+            return ResponseEntity.ok(Map.of());
+        }
+        List<Long> blockIds = profile.getBlocks().stream()
+                .map(ContentBlock::getId)
+                .collect(Collectors.toList());
+        Map<Long, Long> stats = clickLogRepository.countByBlockIdIn(blockIds).stream()
+                .collect(Collectors.toMap(ClickCount::getBlockId, ClickCount::getCount));
         return ResponseEntity.ok(stats);
     }
 }

@@ -34,14 +34,14 @@ public class Profile {
 
     private Integer backgroundImageOpacity;
 
-    // === CÀI ĐẶT GIAO DIỆN MỚI ===
+    // === CÀI ĐẶT GIAO DIỆN ===
     @Column(length = 50)
     private String buttonStyle; // e.g., 'rounded-full', 'rounded-lg', 'rounded-none'
 
     @Column(length = 50)
     private String font; // e.g., 'font-inter', 'font-roboto-mono'
 
-    // === CÀI ĐẶT SEO MỚI ===
+    // === CÀI ĐẶT SEO ===
     @Column(length = 120)
     private String seoTitle;
 
@@ -51,6 +51,21 @@ public class Profile {
     @Column(length = 1000)
     private String socialImage;
 
+    // === CÀI ĐẶT QUYỀN RIÊNG TƯ & THỐNG KÊ ===
+    @Column(name = "show_stats")
+    private Boolean showStats = false;
+
+    @Column(name = "email_notifications")
+    private Boolean emailNotifications = true;
+
+    @Column(name = "analytics_enabled")
+    private Boolean analyticsEnabled = true;
+
+    @Column(name = "public_profile")
+    private Boolean publicProfile = true;
+
+    @Column(name = "views")
+    private Long views = 0L;
 
     @Column(nullable = false, unique = true)
     private String userId;
