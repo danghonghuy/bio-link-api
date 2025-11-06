@@ -13,20 +13,20 @@ import java.util.List;
 @Repository
 public interface ClickLogRepository extends JpaRepository<ClickLog, Long> {
 
-    @Query("SELECT b.id as blockId, COUNT(c.id) as count FROM ClickLog c JOIN c.contentBlock b WHERE b.id IN :blockIds GROUP BY b.id")
+    @Query("SELECT cl.blockId as blockId, COUNT(cl.id) as count FROM ClickLog cl WHERE cl.blockId IN :blockIds GROUP BY cl.blockId")
     List<ClickCount> countByBlockIdIn(@Param("blockIds") List<Long> blockIds);
 
-    @Query("SELECT count(c.id) FROM ClickLog c WHERE c.contentBlock.profile.id = :profileId")
+    @Query("SELECT count(cl.id) FROM ClickLog cl JOIN ContentBlock cb ON cl.blockId = cb.id WHERE cb.profile.id = :profileId")
     long countTotalClicksByProfileId(@Param("profileId") Long profileId);
 
     @Query(value = "SELECT CAST(c.clicked_at AS DATE) as date, COUNT(*) as count " +
-            "FROM click_logs c JOIN content_blocks cb ON c.content_block_id = cb.id " +
+            "FROM click_logs c JOIN content_blocks cb ON c.block_id = cb.id " +
             "WHERE cb.profile_id = :profileId AND c.clicked_at >= :startDate " +
             "GROUP BY CAST(c.clicked_at AS DATE)", nativeQuery = true)
     List<DailyStat> findClickCountsPerDay(@Param("profileId") Long profileId, @Param("startDate") LocalDateTime startDate);
 
     @Query("SELECT cb.id as blockId, COUNT(cl.id) as count, cb.data as blockData " +
-            "FROM ClickLog cl JOIN cl.contentBlock cb " +
+            "FROM ClickLog cl JOIN ContentBlock cb ON cl.blockId = cb.id " +
             "WHERE cb.profile.id = :profileId " +
             "GROUP BY cb.id, cb.data " +
             "ORDER BY count DESC")

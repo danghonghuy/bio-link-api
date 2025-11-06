@@ -6,6 +6,7 @@ import com.bio.dhh.bio.model.Profile;
 import com.bio.dhh.bio.repository.ClickLogRepository;
 import com.bio.dhh.bio.repository.ContentBlockRepository;
 import com.bio.dhh.bio.repository.ProfileRepository;
+import org.springframework.beans.factory.annotation.Autowired; // <-- THÊM DÒNG NÀY (NẾU CHƯA CÓ)
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -20,6 +21,7 @@ public class ContentBlockController {
     private final ProfileRepository profileRepository;
     private final ClickLogRepository clickLogRepository;
 
+    @Autowired // <-- ĐẢM BẢO CÓ @Autowired Ở ĐÂY
     public ContentBlockController(ContentBlockRepository br, ProfileRepository pr, ClickLogRepository cr) {
         this.blockRepository = br;
         this.profileRepository = pr;
