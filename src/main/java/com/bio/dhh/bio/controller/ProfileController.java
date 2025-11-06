@@ -1,13 +1,17 @@
 package com.bio.dhh.bio.controller;
 
+import com.bio.dhh.bio.dto.ProfileUpdateRequestDTO;
 import com.bio.dhh.bio.model.ContentBlock;
 import com.bio.dhh.bio.model.Profile;
 import com.bio.dhh.bio.repository.ClickCount;
 import com.bio.dhh.bio.repository.ClickLogRepository;
 import com.bio.dhh.bio.repository.ProfileRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.text.Normalizer;
 import java.util.List;
@@ -34,24 +38,40 @@ public class ProfileController {
     }
 
     private String generateSlug(String input) {
-        if (input == null) return "";
+        if (input == null || input.isEmpty()) {
+            // Trả về một chuỗi ngẫu nhiên nếu không có input
+            return "profile-" + System.currentTimeMillis();
+        }
         String nowhitespace = WHITESPACE.matcher(input).replaceAll("-");
         String normalized = Normalizer.normalize(nowhitespace, Normalizer.Form.NFD);
         String slug = NONLATIN.matcher(normalized).replaceAll("");
         slug = slug.toLowerCase(Locale.ENGLISH).replaceAll("đ", "d");
-        return slug;
+        return slug.isEmpty() ? "profile-" + System.currentTimeMillis() : slug;
     }
 
     @PostMapping
-    public Profile createOrUpdateProfile(@RequestBody Profile profileData) {
-        Optional<Profile> existingProfile = profileRepository.findByUserId(profileData.getUserId());
-        if (existingProfile.isPresent()) {
-            Profile profileToUpdate = existingProfile.get();
+    public Profile createOrUpdateProfile(@Valid @RequestBody ProfileUpdateRequestDTO profileData) {
+        Optional<Profile> existingProfileOpt = profileRepository.findByUserId(profileData.getUserId());
+
+        if (existingProfileOpt.isPresent()) {
+            Profile profileToUpdate = existingProfileOpt.get();
+
+            if (!profileToUpdate.getSlug().equals(profileData.getSlug()) &&
+                    profileRepository.existsBySlugAndIdNot(profileData.getSlug(), profileToUpdate.getId())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "URL tùy chỉnh này đã được sử dụng.");
+            }
+
             profileToUpdate.setDisplayName(profileData.getDisplayName());
             profileToUpdate.setDescription(profileData.getDescription());
-            profileToUpdate.setAvatarUrl(profileData.getAvatarUrl());
+            profileToUpdate.setSlug(profileData.getSlug());
+
             return profileRepository.save(profileToUpdate);
         } else {
+            Profile newProfile = new Profile();
+            newProfile.setUserId(profileData.getUserId());
+            newProfile.setDisplayName(profileData.getDisplayName());
+            newProfile.setDescription(profileData.getDescription());
+
             String baseSlug = generateSlug(profileData.getDisplayName());
             String finalSlug = baseSlug;
             int counter = 1;
@@ -59,9 +79,26 @@ public class ProfileController {
                 counter++;
                 finalSlug = baseSlug + "-" + counter;
             }
-            profileData.setSlug(finalSlug);
-            return profileRepository.save(profileData);
+            newProfile.setSlug(finalSlug);
+
+            return profileRepository.save(newProfile);
         }
+    }
+
+    @PostMapping("/avatar")
+    public Profile updateAvatar(@RequestBody Map<String, String> payload) {
+        String userId = payload.get("userId");
+        String avatarUrl = payload.get("avatarUrl");
+
+        if (userId == null || avatarUrl == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId và avatarUrl là bắt buộc.");
+        }
+
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy profile"));
+
+        profile.setAvatarUrl(avatarUrl);
+        return profileRepository.save(profile);
     }
 
     @GetMapping("/mine/{userId}")
