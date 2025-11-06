@@ -1,11 +1,13 @@
 package com.bio.dhh.bio.controller;
 
+import com.bio.dhh.bio.dto.AnalyticsDTO;
 import com.bio.dhh.bio.dto.ProfileUpdateRequestDTO;
 import com.bio.dhh.bio.model.ContentBlock;
 import com.bio.dhh.bio.model.Profile;
 import com.bio.dhh.bio.repository.ClickCount;
 import com.bio.dhh.bio.repository.ClickLogRepository;
 import com.bio.dhh.bio.repository.ProfileRepository;
+import com.bio.dhh.bio.service.ProfileService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,14 +29,16 @@ public class ProfileController {
 
     private final ProfileRepository profileRepository;
     private final ClickLogRepository clickLogRepository;
+    private final ProfileService profileService;
 
     private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
     private static final Pattern WHITESPACE = Pattern.compile("[\\s]");
 
     @Autowired
-    public ProfileController(ProfileRepository profileRepository, ClickLogRepository clickLogRepository) {
+    public ProfileController(ProfileRepository profileRepository, ClickLogRepository clickLogRepository, ProfileService profileService) {
         this.profileRepository = profileRepository;
         this.clickLogRepository = clickLogRepository;
+        this.profileService = profileService;
     }
 
     private String generateSlug(String input) {
@@ -46,6 +50,18 @@ public class ProfileController {
         String slug = NONLATIN.matcher(normalized).replaceAll("");
         slug = slug.toLowerCase(Locale.ENGLISH).replaceAll("đ", "d");
         return slug.isEmpty() ? "profile-" + System.currentTimeMillis() : slug;
+    }
+
+    @PostMapping("/{slug}/view")
+    public ResponseEntity<Void> recordProfileView(@PathVariable String slug) {
+        profileService.recordProfileView(slug);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/analytics/{userId}")
+    public ResponseEntity<AnalyticsDTO> getAnalytics(@PathVariable String userId) {
+        AnalyticsDTO analytics = profileService.getAnalytics(userId);
+        return ResponseEntity.ok(analytics);
     }
 
     @PostMapping
