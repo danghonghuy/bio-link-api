@@ -52,7 +52,7 @@ public class ProfileController {
             profileToUpdate.setYoutubeLink(profileData.getYoutubeLink());
             profileToUpdate.setTiktokLink(profileData.getTiktokLink());
             profileToUpdate.setGithubLink(profileData.getGithubLink());
-
+            profileToUpdate.setTheme(profileData.getTheme());
             // Không thay đổi slug khi update
             return profileRepository.save(profileToUpdate);
 

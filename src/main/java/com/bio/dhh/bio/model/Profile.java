@@ -45,7 +45,8 @@ public class Profile {
     // ▼▼▼ TRƯỜNG QUAN TRỌNG CÒN THIẾU ĐÂY ▼▼▼
     @Column(nullable = false, unique = true) // Mỗi người dùng chỉ có 1 profile
     private String userId; // Sẽ lưu ID từ Firebase, ví dụ: "XVc8a...3s2"
-
+    @Column(length = 50, nullable = false, columnDefinition = "varchar(50) default 'default'")
+    private String theme;
     // --- CÁC TRƯỜNG METADATA ---
     @CreationTimestamp
     @Column(updatable = false)
