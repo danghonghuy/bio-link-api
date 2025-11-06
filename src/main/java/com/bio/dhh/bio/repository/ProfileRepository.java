@@ -4,12 +4,16 @@ import com.bio.dhh.bio.model.Profile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional; // <<<< THÊM DÒNG NÀY
+import java.util.Optional;
 
 @Repository
 public interface ProfileRepository extends JpaRepository<Profile, Long> {
 
-    // DẠY CHO NÓ PHƯƠNG THỨC MỚI BẰNG CÁCH KHAI BÁO Ở ĐÂY
+    // Tìm kiếm profile dựa trên trường 'slug'
     Optional<Profile> findBySlug(String slug);
+
+    // ▼▼▼ THÊM DÒNG NÀY VÀO ▼▼▼
+    // Dạy cho Spring cách tìm profile dựa trên trường 'userId'
+    Optional<Profile> findByUserId(String userId);
 
 }

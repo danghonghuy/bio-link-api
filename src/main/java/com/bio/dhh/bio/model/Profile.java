@@ -1,7 +1,7 @@
 package com.bio.dhh.bio.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Data; // Giữ nguyên Lombok nếu bạn dùng, không cần thêm getter/setter thủ công
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -15,20 +15,21 @@ public class Profile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    // --- CÁC TRƯỜNG DỮ LIỆU CỦA BIO ---
+    @Column(nullable = false, unique = true, length = 100)
     private String slug;
 
     @Column(nullable = false, length = 100)
     private String displayName;
 
-    // SỬA: Dùng @Lob để tạo kiểu TEXT cho nội dung dài
     @Lob
+    @Column(columnDefinition="TEXT") // Định nghĩa rõ hơn cho cross-database
     private String description;
 
-    // SỬA: Dùng VARCHAR với độ dài hợp lý cho các đường link và URL
     @Column(length = 1000)
     private String avatarUrl;
 
+    // --- CÁC TRƯỜNG LINK MXH ---
     @Column(length = 500)
     private String facebookLink;
 
@@ -39,12 +40,17 @@ public class Profile {
     private String tiktokLink;
 
     @Column(length = 500)
-    private String discordLink;
-
-    @Column(length = 500)
     private String githubLink;
 
+    // ▼▼▼ TRƯỜNG QUAN TRỌNG CÒN THIẾU ĐÂY ▼▼▼
+    @Column(nullable = false, unique = true) // Mỗi người dùng chỉ có 1 profile
+    private String userId; // Sẽ lưu ID từ Firebase, ví dụ: "XVc8a...3s2"
+
+    // --- CÁC TRƯỜNG METADATA ---
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    // Lưu ý: Nhờ có @Data (Lombok), bạn không cần viết thủ công getter/setter
+    // cho 'userId' nữa. Lombok sẽ tự làm điều đó.
 }

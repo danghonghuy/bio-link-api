@@ -6,57 +6,87 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.Normalizer;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @RestController
-@RequestMapping("/api/profiles") // Đặt tiền tố chung ở đây
-
+@RequestMapping("/api/profiles")
 public class ProfileController {
 
     private final ProfileRepository profileRepository;
+
+    private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
+    private static final Pattern WHITESPACE = Pattern.compile("[\\s]");
 
     @Autowired
     public ProfileController(ProfileRepository profileRepository) {
         this.profileRepository = profileRepository;
     }
 
-    @PostMapping // URL vẫn là /api/profiles
-    public Profile createProfile(@RequestBody Profile profileData) {
-        // --- LOGIC TẠO SLUG NÂNG CẤP ---
-        String baseSlug = profileData.getDisplayName().toLowerCase()
-                .replaceAll("đ", "d") // Chuyển 'đ' thành 'd'
-                .replaceAll("[àáạảãâầấậẩẫăằắặẳẵ]", "a")
-                .replaceAll("[èéẹẻẽêềếệểễ]", "e")
-                .replaceAll("[ìíịỉĩ]", "i")
-                .replaceAll("[òóọỏõôồốộổỗơờớợởỡ]", "o")
-                .replaceAll("[ùúụủũưừứựửữ]", "u")
-                .replaceAll("[ỳýỵỷỹ]", "y")
-                .replaceAll("\\s+", "-") // Thay dấu cách bằng gạch nối
-                .replaceAll("[^a-z0-9-]", ""); // Bỏ ký tự lạ
-
-        String finalSlug = baseSlug;
-        int counter = 1;
-
-        // Vòng lặp kiểm tra: nếu slug đã tồn tại thì thêm số vào đuôi
-        while (profileRepository.findBySlug(finalSlug).isPresent()) {
-            counter++;
-            finalSlug = baseSlug + "-" + counter;
-        }
-
-        profileData.setSlug(finalSlug);
-        // --- KẾT THÚC LOGIC NÂNG CẤP ---
-
-        // Lưu profile vào database và trả về kết quả
-        return profileRepository.save(profileData);
+    // --- HÀM TẠO SLUG TÁCH RIÊNG ---
+    private String generateSlug(String input) {
+        if (input == null) return "";
+        String nowhitespace = WHITESPACE.matcher(input).replaceAll("-");
+        String normalized = Normalizer.normalize(nowhitespace, Normalizer.Form.NFD);
+        String slug = NONLATIN.matcher(normalized).replaceAll("");
+        slug = slug.toLowerCase(Locale.ENGLISH)
+                .replaceAll("đ", "d");
+        return slug;
     }
 
-    // API MỚI CỦA BẠN ĐÂY
+    // === API TẠO MỚI HOẶC CẬP NHẬT PROFILE ===
+    @PostMapping
+    public Profile createOrUpdateProfile(@RequestBody Profile profileData) {
+
+        Optional<Profile> existingProfile = profileRepository.findByUserId(profileData.getUserId());
+
+        if (existingProfile.isPresent()) {
+            // --- UPDATE (CẬP NHẬT) ---
+            Profile profileToUpdate = existingProfile.get();
+            profileToUpdate.setDisplayName(profileData.getDisplayName());
+            profileToUpdate.setDescription(profileData.getDescription());
+            profileToUpdate.setAvatarUrl(profileData.getAvatarUrl());
+            profileToUpdate.setFacebookLink(profileData.getFacebookLink());
+            profileToUpdate.setYoutubeLink(profileData.getYoutubeLink());
+            profileToUpdate.setTiktokLink(profileData.getTiktokLink());
+            profileToUpdate.setGithubLink(profileData.getGithubLink());
+
+            // Không thay đổi slug khi update
+            return profileRepository.save(profileToUpdate);
+
+        } else {
+            // --- CREATE (TẠO MỚI) ---
+            String baseSlug = generateSlug(profileData.getDisplayName());
+            String finalSlug = baseSlug;
+            int counter = 1;
+
+            while (profileRepository.findBySlug(finalSlug).isPresent()) {
+                counter++;
+                finalSlug = baseSlug + "-" + counter;
+            }
+
+            profileData.setSlug(finalSlug);
+            return profileRepository.save(profileData);
+        }
+    }
+
+    // === API MỚI: Lấy profile của người dùng đang đăng nhập ===
+    @GetMapping("/mine/{userId}")
+    public ResponseEntity<Profile> getMyProfile(@PathVariable String userId) {
+        return profileRepository.findByUserId(userId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // === API xem bio công khai (giữ nguyên) ===
     @GetMapping("/{slug}")
     public ResponseEntity<Profile> getProfileBySlug(@PathVariable String slug) {
         Optional<Profile> profileOptional = profileRepository.findBySlug(slug);
 
         return profileOptional
-                .map(ResponseEntity::ok) // Nếu có profile, trả về OK(profile)
-                .orElseGet(() -> ResponseEntity.notFound().build()); // Nếu không, trả về Not Found
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
