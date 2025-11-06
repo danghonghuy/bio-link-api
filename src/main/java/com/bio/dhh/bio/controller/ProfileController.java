@@ -43,17 +43,10 @@ public class ProfileController {
         Optional<Profile> existingProfile = profileRepository.findByUserId(profileData.getUserId());
 
         if (existingProfile.isPresent()) {
-            // --- UPDATE (CẬP NHẬT) ---
             Profile profileToUpdate = existingProfile.get();
             profileToUpdate.setDisplayName(profileData.getDisplayName());
             profileToUpdate.setDescription(profileData.getDescription());
             profileToUpdate.setAvatarUrl(profileData.getAvatarUrl());
-            profileToUpdate.setFacebookLink(profileData.getFacebookLink());
-            profileToUpdate.setYoutubeLink(profileData.getYoutubeLink());
-            profileToUpdate.setTiktokLink(profileData.getTiktokLink());
-            profileToUpdate.setGithubLink(profileData.getGithubLink());
-            profileToUpdate.setTheme(profileData.getTheme());
-            // Không thay đổi slug khi update
             return profileRepository.save(profileToUpdate);
 
         } else {
