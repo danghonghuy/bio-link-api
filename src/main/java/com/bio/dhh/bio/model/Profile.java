@@ -50,7 +50,11 @@ public class Profile {
 
     @Column(length = 1000)
     private String socialImage;
+    @Column(length = 50)
+    private String googleAnalyticsId;
 
+    @Column(length = 50)
+    private String facebookPixelId;
     // === CÀI ĐẶT QUYỀN RIÊNG TƯ & THỐNG KÊ ===
     @Column(name = "show_stats")
     private Boolean showStats = false;

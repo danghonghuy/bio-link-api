@@ -72,6 +72,8 @@ public class ProfileController {
             profileToUpdate.setSeoTitle(profileData.getSeoTitle());
             profileToUpdate.setSeoDescription(profileData.getSeoDescription());
             profileToUpdate.setSocialImage(profileData.getSocialImage());
+            profileToUpdate.setGoogleAnalyticsId(profileData.getGoogleAnalyticsId());
+            profileToUpdate.setFacebookPixelId(profileData.getFacebookPixelId());
 
             return profileRepository.save(profileToUpdate);
         } else {
@@ -86,6 +88,8 @@ public class ProfileController {
             newProfile.setSeoTitle(profileData.getSeoTitle());
             newProfile.setSeoDescription(profileData.getSeoDescription());
             newProfile.setSocialImage(profileData.getSocialImage());
+            newProfile.setGoogleAnalyticsId(profileData.getGoogleAnalyticsId());
+            newProfile.setFacebookPixelId(profileData.getFacebookPixelId());
 
             String baseSlug = generateSlug(profileData.getDisplayName());
             String finalSlug = baseSlug;

@@ -29,7 +29,11 @@ public class ProfileUpdateRequestDTO {
     @Min(value = 0, message = "Độ mờ tối thiểu là 0")
     @Max(value = 100, message = "Độ mờ tối đa là 100")
     private Integer backgroundImageOpacity;
+    @Size(max = 50, message = "Google Analytics ID không hợp lệ")
+    private String googleAnalyticsId;
 
+    @Size(max = 50, message = "Facebook Pixel ID không hợp lệ")
+    private String facebookPixelId;
     // ▼▼▼ DÁN 5 DÒNG NÀY VÀO ▼▼▼
     @Size(max = 50)
     private String buttonStyle;
