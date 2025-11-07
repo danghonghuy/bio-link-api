@@ -136,9 +136,9 @@ public class ProfileController {
     }
 
     @PostMapping("/{slug}/view")
-    public ResponseEntity<Void> recordProfileView(@PathVariable String slug) {
-        profileService.recordProfileView(slug);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Profile> recordProfileView(@PathVariable String slug) { // <-- Thay đổi kiểu trả về
+        Profile updatedProfile = profileService.recordProfileView(slug); // <-- Nhận lại profile
+        return ResponseEntity.ok(updatedProfile); // <-- Trả về cho Front-end
     }
 
     @GetMapping("/analytics/{userId}")

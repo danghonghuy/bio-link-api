@@ -18,7 +18,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,21 +41,20 @@ public class ProfileService {
     }
 
     @Transactional
-    public void recordProfileView(String slug) {
+    public Profile recordProfileView(String slug) {
         Profile profile = profileRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile không tồn tại"));
 
-        // Ghi nhận view vào ViewLog (cho analytics chi tiết)
         ViewLog viewLog = new ViewLog();
         viewLog.setProfile(profile);
         viewLogRepository.save(viewLog);
 
-        // Tăng counter views trong Profile (cho hiển thị nhanh)
         if (profile.getViews() == null) {
             profile.setViews(0L);
         }
         profile.setViews(profile.getViews() + 1);
-        profileRepository.save(profile);
+
+        return profileRepository.save(profile);
     }
 
     public AnalyticsDTO getAnalytics(String userId) {
@@ -66,11 +64,9 @@ public class ProfileService {
         AnalyticsDTO analyticsDTO = new AnalyticsDTO();
         long profileId = profile.getId();
 
-        // 1. Get totals
         analyticsDTO.setTotalViews(viewLogRepository.countByProfileId(profileId));
         analyticsDTO.setTotalClicks(clickLogRepository.countTotalClicksByProfileId(profileId));
 
-        // 2. Get daily stats for last 7 days
         LocalDateTime sevenDaysAgo = LocalDate.now().minusDays(6).atStartOfDay();
         List<DailyStat> dailyViews = viewLogRepository.findViewCountsPerDay(profileId, sevenDaysAgo);
         List<DailyStat> dailyClicks = clickLogRepository.findClickCountsPerDay(profileId, sevenDaysAgo);
@@ -99,7 +95,6 @@ public class ProfileService {
         }
         analyticsDTO.setDailyStats(dailyStats);
 
-        // 3. Get top 5 links
         List<TopLink> topLinks = clickLogRepository.findTopLinksByProfileId(profileId, PageRequest.of(0, 5));
         List<TopLinkDTO> topLinkDTOs = topLinks.stream().map(this::mapToTopLinkDTO).collect(Collectors.toList());
         analyticsDTO.setTopLinks(topLinkDTOs);
