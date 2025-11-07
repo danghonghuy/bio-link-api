@@ -20,5 +20,6 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     @Modifying
     @Query("UPDATE Profile p SET p.views = p.views + 1 WHERE p.slug = :slug")
     void incrementViewsBySlug(@Param("slug") String slug);
+    void deleteByUserId(String userId);
 
 }
