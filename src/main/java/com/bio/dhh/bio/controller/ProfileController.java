@@ -234,4 +234,25 @@ public class ProfileController {
         guestbookMessageRepository.delete(message);
         return ResponseEntity.noContent().build();
     }
+    // Endpoint để lấy số tin nhắn chưa đọc
+    @GetMapping("/guestbook/unread-count/{userId}")
+    public ResponseEntity<Map<String, Long>> getUnreadMessageCount(@PathVariable String userId) {
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile không tồn tại"));
+
+        long unreadCount = guestbookMessageRepository.countByProfileIdAndIsReadFalse(profile.getId());
+
+        return ResponseEntity.ok(Map.of("unreadCount", unreadCount));
+    }
+
+    // Endpoint để đánh dấu tất cả là đã đọc
+    @PostMapping("/guestbook/mark-as-read/{userId}")
+    public ResponseEntity<Void> markMessagesAsRead(@PathVariable String userId) {
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile không tồn tại"));
+
+        guestbookMessageRepository.markAllAsReadByProfileId(profile.getId());
+
+        return ResponseEntity.ok().build();
+    }
 }

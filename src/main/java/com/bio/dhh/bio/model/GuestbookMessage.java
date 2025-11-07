@@ -18,7 +18,9 @@ public class GuestbookMessage {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_id", nullable = false)
     private Profile profile;
-
+    // --- THÊM DÒNG NÀY ---
+    @Column(nullable = false)
+    private Boolean isRead = false; // Mặc định là chưa đọc
     @Column(nullable = false, length = 100)
     private String authorName;
 
