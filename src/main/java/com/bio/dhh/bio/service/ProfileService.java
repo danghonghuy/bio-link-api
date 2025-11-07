@@ -19,11 +19,9 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.TextStyle;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 public class ProfileService {
@@ -55,47 +53,71 @@ public class ProfileService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không thể tải lại profile sau khi cập nhật view"));
     }
 
-    public AnalyticsDTO getAnalytics(String userId) {
+    public AnalyticsDTO getAnalytics(String userId, String range) {
         Profile profile = profileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy profile"));
-
-        AnalyticsDTO analyticsDTO = new AnalyticsDTO();
         long profileId = profile.getId();
 
-        analyticsDTO.setTotalViews(viewLogRepository.countByProfileId(profileId));
-        analyticsDTO.setTotalClicks(clickLogRepository.countTotalClicksByProfileId(profileId));
+        // 1. Xác định khoảng thời gian start và end date
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startDate;
+        LocalDateTime endDate = now;
+        int daysInRange;
 
-        LocalDateTime sevenDaysAgo = LocalDate.now().minusDays(6).atStartOfDay();
-        List<DailyStat> dailyViews = viewLogRepository.findViewCountsPerDay(profileId, sevenDaysAgo);
-        List<DailyStat> dailyClicks = clickLogRepository.findClickCountsPerDay(profileId, sevenDaysAgo);
-
-        Map<LocalDate, Integer> viewsMap = dailyViews.stream()
-                .collect(Collectors.toMap(stat -> stat.getDate().toLocalDate(), DailyStat::getCount));
-        Map<LocalDate, Integer> clicksMap = dailyClicks.stream()
-                .collect(Collectors.toMap(stat -> stat.getDate().toLocalDate(), DailyStat::getCount));
-
-        List<DailyStatDTO> dailyStats = new ArrayList<>();
-        for (int i = 6; i >= 0; i--) {
-            LocalDate date = LocalDate.now().minusDays(i);
-            DailyStatDTO statDTO = new DailyStatDTO();
-
-            String dayName = date.getDayOfWeek().getDisplayName(TextStyle.SHORT, new Locale("vi", "VN"));
-            if(date.isEqual(LocalDate.now())) {
-                dayName = "Hôm nay";
-            } else if (date.isEqual(LocalDate.now().minusDays(1))) {
-                dayName = "Hôm qua";
-            }
-
-            statDTO.setDate(dayName);
-            statDTO.setViews(viewsMap.getOrDefault(date, 0));
-            statDTO.setClicks(clicksMap.getOrDefault(date, 0));
-            dailyStats.add(statDTO);
+        switch (range) {
+            case "today":
+                startDate = now.toLocalDate().atStartOfDay();
+                daysInRange = 1;
+                break;
+            case "yesterday":
+                startDate = now.toLocalDate().minusDays(1).atStartOfDay();
+                endDate = now.toLocalDate().atStartOfDay().minusNanos(1);
+                daysInRange = 1;
+                break;
+            case "30d":
+                startDate = now.minusDays(29).toLocalDate().atStartOfDay();
+                daysInRange = 30;
+                break;
+            case "all":
+                startDate = LocalDateTime.of(2000, 1, 1, 0, 0);
+                daysInRange = -1; // Cờ hiệu để không điền ngày trống
+                break;
+            case "7d":
+            default:
+                startDate = now.minusDays(6).toLocalDate().atStartOfDay();
+                daysInRange = 7;
+                break;
         }
-        analyticsDTO.setDailyStats(dailyStats);
 
-        List<TopLink> topLinks = clickLogRepository.findTopLinksByProfileId(profileId, PageRequest.of(0, 5));
-        List<TopLinkDTO> topLinkDTOs = topLinks.stream().map(this::mapToTopLinkDTO).collect(Collectors.toList());
-        analyticsDTO.setTopLinks(topLinkDTOs);
+        // 2. Gọi các repository đã được sửa đổi
+        AnalyticsDTO analyticsDTO = new AnalyticsDTO();
+        analyticsDTO.setTotalViews(viewLogRepository.countByProfileIdInDateRange(profileId, startDate, endDate));
+        analyticsDTO.setTotalClicks(clickLogRepository.countTotalClicksByProfileIdInDateRange(profileId, startDate, endDate));
+
+        List<DailyStat> dailyViews = viewLogRepository.findViewCountsPerDay(profileId, startDate, endDate);
+        List<DailyStat> dailyClicks = clickLogRepository.findClickCountsPerDay(profileId, startDate, endDate);
+
+        // 3. Kết hợp và điền các ngày còn thiếu
+        Map<LocalDate, DailyStatDTO> combinedStats = new TreeMap<>();
+
+        // Điền các ngày trống với giá trị 0 (trừ trường hợp "all time")
+        if (daysInRange > 0) {
+            LocalDate initialDate = startDate.toLocalDate();
+            IntStream.range(0, daysInRange).forEach(i -> {
+                LocalDate date = initialDate.plusDays(i);
+                combinedStats.put(date, new DailyStatDTO(date, 0, 0));
+            });
+        }
+
+        dailyViews.forEach(v -> combinedStats.computeIfAbsent(v.getDate().toLocalDate(), k -> new DailyStatDTO(k, 0, 0)).setViews(v.getCount()));
+        dailyClicks.forEach(c -> combinedStats.computeIfAbsent(c.getDate().toLocalDate(), k -> new DailyStatDTO(k, 0, 0)).setClicks(c.getCount()));
+
+        // 4. KHÔNG ĐỊNH DẠNG NGÀY THÁNG, để FE tự làm
+        analyticsDTO.setDailyStats(combinedStats.values().stream().collect(Collectors.toList()));
+
+        // 5. Lấy Top Links trong khoảng thời gian
+        List<TopLink> topLinks = clickLogRepository.findTopLinksByProfileId(profileId, startDate, endDate, PageRequest.of(0, 5));
+        analyticsDTO.setTopLinks(topLinks.stream().map(this::mapToTopLinkDTO).collect(Collectors.toList()));
 
         return analyticsDTO;
     }

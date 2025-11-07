@@ -144,8 +144,11 @@ public class ProfileController {
     }
 
     @GetMapping("/analytics/{userId}")
-    public ResponseEntity<AnalyticsDTO> getAnalytics(@PathVariable String userId) {
-        AnalyticsDTO analytics = profileService.getAnalytics(userId);
+    public ResponseEntity<AnalyticsDTO> getAnalytics(
+            @PathVariable String userId,
+            @RequestParam(name = "range", defaultValue = "7d") String range) { // <-- THAY ĐỔI Ở ĐÂY
+
+        AnalyticsDTO analytics = profileService.getAnalytics(userId, range); // <-- TRUYỀN `range` VÀO SERVICE
         return ResponseEntity.ok(analytics);
     }
 

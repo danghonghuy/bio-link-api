@@ -12,11 +12,12 @@ import java.util.List;
 @Repository
 public interface ViewLogRepository extends JpaRepository<ViewLog, Long> {
 
-    long countByProfileId(Long profileId);
+    @Query("SELECT COUNT(v) FROM ViewLog v WHERE v.profile.id = :profileId AND v.viewedAt BETWEEN :startDate AND :endDate")
+    long countByProfileIdInDateRange(@Param("profileId") Long profileId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
     @Query(value = "SELECT CAST(v.viewed_at AS DATE) as date, COUNT(*) as count " +
             "FROM view_logs v " +
-            "WHERE v.profile_id = :profileId AND v.viewed_at >= :startDate " +
+            "WHERE v.profile_id = :profileId AND v.viewed_at BETWEEN :startDate AND :endDate " + // <-- THÊM `endDate`
             "GROUP BY CAST(v.viewed_at AS DATE)", nativeQuery = true)
-    List<DailyStat> findViewCountsPerDay(@Param("profileId") Long profileId, @Param("startDate") LocalDateTime startDate);
+    List<DailyStat> findViewCountsPerDay(@Param("profileId") Long profileId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate); // <-- THÊM `endDate`
 }
