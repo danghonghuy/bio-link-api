@@ -1,5 +1,6 @@
 package com.bio.dhh.bio.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -29,19 +30,23 @@ public class Profile {
     @Column(length = 1000)
     private String avatarUrl;
 
+    @Column(length = 50)
+    private String fontColor;
+
     @Column(length = 255)
     private String background;
 
     private Integer backgroundImageOpacity;
 
-    // === CÀI ĐẶT GIAO DIỆN ===
     @Column(length = 50)
-    private String buttonStyle; // e.g., 'rounded-full', 'rounded-lg', 'rounded-none'
+    private String buttonStyle;
 
     @Column(length = 50)
-    private String font; // e.g., 'font-inter', 'font-roboto-mono'
+    private String buttonShape;
 
-    // === CÀI ĐẶT SEO ===
+    @Column(length = 50)
+    private String font;
+
     @Column(length = 120)
     private String seoTitle;
 
@@ -50,12 +55,13 @@ public class Profile {
 
     @Column(length = 1000)
     private String socialImage;
+
     @Column(length = 50)
     private String googleAnalyticsId;
 
     @Column(length = 50)
     private String facebookPixelId;
-    // === CÀI ĐẶT QUYỀN RIÊNG TƯ & THỐNG KÊ ===
+
     @Column(name = "show_stats")
     private Boolean showStats = false;
 
@@ -85,5 +91,6 @@ public class Profile {
             fetch = FetchType.EAGER
     )
     @OrderBy("blockOrder ASC")
+    @JsonManagedReference
     private List<ContentBlock> blocks = new ArrayList<>();
 }
