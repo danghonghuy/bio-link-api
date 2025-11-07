@@ -74,6 +74,7 @@ public class ProfileController {
             profileToUpdate.setBackgroundImageOpacity(profileData.getBackgroundImageOpacity());
             profileToUpdate.setButtonStyle(profileData.getButtonStyle());
             profileToUpdate.setFont(profileData.getFont());
+            profileToUpdate.setFontColor(profileData.getFontColor());
             profileToUpdate.setSeoTitle(profileData.getSeoTitle());
             profileToUpdate.setSeoDescription(profileData.getSeoDescription());
             profileToUpdate.setSocialImage(profileData.getSocialImage());
@@ -90,6 +91,7 @@ public class ProfileController {
             newProfile.setBackgroundImageOpacity(profileData.getBackgroundImageOpacity());
             newProfile.setButtonStyle(profileData.getButtonStyle());
             newProfile.setFont(profileData.getFont());
+            newProfile.setFontColor(profileData.getFontColor());
             newProfile.setSeoTitle(profileData.getSeoTitle());
             newProfile.setSeoDescription(profileData.getSeoDescription());
             newProfile.setSocialImage(profileData.getSocialImage());

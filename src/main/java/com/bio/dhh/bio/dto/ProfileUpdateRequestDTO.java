@@ -31,7 +31,8 @@ public class ProfileUpdateRequestDTO {
     private Integer backgroundImageOpacity;
     @Size(max = 50, message = "Google Analytics ID không hợp lệ")
     private String googleAnalyticsId;
-
+    @Size(max = 50, message = "Mã màu không hợp lệ")
+    private String fontColor;
     @Size(max = 50, message = "Facebook Pixel ID không hợp lệ")
     private String facebookPixelId;
     // ▼▼▼ DÁN 5 DÒNG NÀY VÀO ▼▼▼
