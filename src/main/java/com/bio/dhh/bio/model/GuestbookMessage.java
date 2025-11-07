@@ -21,6 +21,8 @@ public class GuestbookMessage {
     // --- THÊM DÒNG NÀY ---
     @Column(nullable = false)
     private Boolean isRead = false; // Mặc định là chưa đọc
+    @Column(nullable = false)
+    private Boolean isAuthor = false; // Mặc định là khách
     @Column(nullable = false, length = 100)
     private String authorName;
 
