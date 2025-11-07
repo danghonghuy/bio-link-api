@@ -1,12 +1,15 @@
 package com.bio.dhh.bio.controller;
 
 import com.bio.dhh.bio.dto.AnalyticsDTO;
+import com.bio.dhh.bio.dto.GuestbookMessageDTO;
 import com.bio.dhh.bio.dto.ProfileUpdateRequestDTO;
 import com.bio.dhh.bio.dto.SettingsUpdateDTO;
 import com.bio.dhh.bio.model.ContentBlock;
+import com.bio.dhh.bio.model.GuestbookMessage;
 import com.bio.dhh.bio.model.Profile;
 import com.bio.dhh.bio.repository.ClickCount;
 import com.bio.dhh.bio.repository.ClickLogRepository;
+import com.bio.dhh.bio.repository.GuestbookMessageRepository;
 import com.bio.dhh.bio.repository.ProfileRepository;
 import com.bio.dhh.bio.service.ProfileService;
 import jakarta.validation.Valid;
@@ -31,15 +34,17 @@ public class ProfileController {
     private final ProfileRepository profileRepository;
     private final ClickLogRepository clickLogRepository;
     private final ProfileService profileService;
+    private final GuestbookMessageRepository guestbookMessageRepository;
 
     private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
     private static final Pattern WHITESPACE = Pattern.compile("[\\s]");
 
     @Autowired
-    public ProfileController(ProfileRepository profileRepository, ClickLogRepository clickLogRepository, ProfileService profileService) {
+    public ProfileController(ProfileRepository profileRepository, ClickLogRepository clickLogRepository, ProfileService profileService, GuestbookMessageRepository guestbookMessageRepository) {
         this.profileRepository = profileRepository;
         this.clickLogRepository = clickLogRepository;
         this.profileService = profileService;
+        this.guestbookMessageRepository = guestbookMessageRepository;
     }
 
     private String generateSlug(String input) {
@@ -104,7 +109,6 @@ public class ProfileController {
         }
     }
 
-    // === ENDPOINT MỚI: CẬP NHẬT CÀI ĐẶT ===
     @PostMapping("/settings")
     public ResponseEntity<Map<String, Object>> updateSettings(@RequestBody SettingsUpdateDTO settingsDTO) {
         Profile profile = profileRepository.findByUserId(settingsDTO.getUserId())
@@ -185,5 +189,49 @@ public class ProfileController {
         Map<Long, Long> stats = clickLogRepository.countByBlockIdIn(blockIds).stream()
                 .collect(Collectors.toMap(ClickCount::getBlockId, ClickCount::getCount));
         return ResponseEntity.ok(stats);
+    }
+
+    @PostMapping("/{slug}/guestbook")
+    public ResponseEntity<GuestbookMessage> addGuestbookMessage(@PathVariable String slug, @Valid @RequestBody GuestbookMessageDTO messageDTO) {
+        Profile profile = profileRepository.findBySlug(slug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile không tồn tại"));
+
+        GuestbookMessage newMessage = new GuestbookMessage();
+        newMessage.setProfile(profile);
+        newMessage.setAuthorName(messageDTO.getAuthorName());
+        newMessage.setMessageContent(messageDTO.getMessageContent());
+        newMessage.setIsPublic(messageDTO.getIsPublic());
+
+        guestbookMessageRepository.save(newMessage);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newMessage);
+    }
+
+    @GetMapping("/{slug}/guestbook/public")
+    public ResponseEntity<List<GuestbookMessage>> getPublicGuestbookMessages(@PathVariable String slug) {
+        Profile profile = profileRepository.findBySlug(slug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile không tồn tại"));
+        List<GuestbookMessage> messages = guestbookMessageRepository.findByProfileIdAndIsPublicTrueOrderByCreatedAtDesc(profile.getId());
+        return ResponseEntity.ok(messages);
+    }
+
+    @GetMapping("/guestbook/mine/{userId}")
+    public ResponseEntity<List<GuestbookMessage>> getMyGuestbookMessages(@PathVariable String userId) {
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile không tồn tại"));
+        List<GuestbookMessage> messages = guestbookMessageRepository.findByProfileIdOrderByCreatedAtDesc(profile.getId());
+        return ResponseEntity.ok(messages);
+    }
+
+    @DeleteMapping("/guestbook/{messageId}")
+    public ResponseEntity<Void> deleteGuestbookMessage(@PathVariable Long messageId, @RequestParam String userId) {
+        GuestbookMessage message = guestbookMessageRepository.findById(messageId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tin nhắn không tồn tại"));
+
+        if (!message.getProfile().getUserId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Không có quyền xóa tin nhắn này.");
+        }
+
+        guestbookMessageRepository.delete(message);
+        return ResponseEntity.noContent().build();
     }
 }
