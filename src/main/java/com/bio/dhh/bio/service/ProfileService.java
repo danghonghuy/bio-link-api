@@ -49,12 +49,10 @@ public class ProfileService {
         viewLog.setProfile(profile);
         viewLogRepository.save(viewLog);
 
-        if (profile.getViews() == null) {
-            profile.setViews(0L);
-        }
-        profile.setViews(profile.getViews() + 1);
+        profileRepository.incrementViewsBySlug(slug);
 
-        return profileRepository.save(profile);
+        return profileRepository.findBySlug(slug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không thể tải lại profile sau khi cập nhật view"));
     }
 
     public AnalyticsDTO getAnalytics(String userId) {
