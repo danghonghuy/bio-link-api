@@ -1,9 +1,6 @@
 package com.bio.dhh.bio.controller;
 
-import com.bio.dhh.bio.dto.AnalyticsDTO;
-import com.bio.dhh.bio.dto.GuestbookMessageDTO;
-import com.bio.dhh.bio.dto.ProfileUpdateRequestDTO;
-import com.bio.dhh.bio.dto.SettingsUpdateDTO;
+import com.bio.dhh.bio.dto.*;
 import com.bio.dhh.bio.model.ContentBlock;
 import com.bio.dhh.bio.model.GuestbookMessage;
 import com.bio.dhh.bio.model.Profile;
@@ -259,20 +256,23 @@ public class ProfileController {
         guestbookMessageRepository.markAllAsReadByProfileId(profile.getId());
 
         return ResponseEntity.ok().build();
-    }@PostMapping("/guestbook/comment-as-author")
-    public ResponseEntity<GuestbookMessage> addAuthorComment(@Valid @RequestBody GuestbookMessageDTO messageDTO, @RequestParam String userId) {
+    }
+
+    @PostMapping("/guestbook/comment-as-author")
+    public ResponseEntity<GuestbookMessage> addAuthorComment(
+            @Valid @RequestBody AuthorCommentDTO commentDTO, // <-- THAY ĐỔI Ở ĐÂY
+            @RequestParam String userId) {
+
         Profile profile = profileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile không tồn tại"));
 
-        // Cần có logic xác thực để đảm bảo người gửi request chính là chủ của userId này
-
         GuestbookMessage newMessage = new GuestbookMessage();
         newMessage.setProfile(profile);
-        newMessage.setAuthorName(profile.getDisplayName()); // Tự động lấy tên tác giả
-        newMessage.setMessageContent(messageDTO.getMessageContent());
-        newMessage.setIsPublic(true); // Comment của tác giả luôn công khai
-        newMessage.setIsRead(true);   // Tự động đánh dấu là đã đọc
-        newMessage.setIsAuthor(true); // Đánh dấu đây là comment của tác giả
+        newMessage.setAuthorName(profile.getDisplayName());
+        newMessage.setMessageContent(commentDTO.getMessageContent()); // <-- Lấy từ DTO mới
+        newMessage.setIsPublic(true);
+        newMessage.setIsRead(true);
+        newMessage.setIsAuthor(true);
 
         guestbookMessageRepository.save(newMessage);
         return ResponseEntity.status(HttpStatus.CREATED).body(newMessage);
