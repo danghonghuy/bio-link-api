@@ -21,5 +21,6 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     @Query("UPDATE Profile p SET p.views = p.views + 1 WHERE p.slug = :slug")
     void incrementViewsBySlug(@Param("slug") String slug);
     void deleteByUserId(String userId);
-
+    @Query("SELECT p FROM Profile p LEFT JOIN FETCH p.blocks WHERE p.userId = :userId")
+    Optional<Profile> findByUserIdWithBlocks(@Param("userId") String userId);
 }

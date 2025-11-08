@@ -52,7 +52,10 @@ public class ProfileService {
         return profileRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không thể tải lại profile sau khi cập nhật view"));
     }
-
+    @Transactional(readOnly = true)
+    public Optional<Profile> getMyProfile(String userId) {
+        return profileRepository.findByUserIdWithBlocks(userId);
+    }
     public AnalyticsDTO getAnalytics(String userId, String range) {
         Profile profile = profileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy profile"));

@@ -56,10 +56,8 @@ public class ProfileController {
     @PostMapping
     public Profile createOrUpdateProfile(@Valid @RequestBody ProfileUpdateRequestDTO profileData) {
         Optional<Profile> existingProfileOpt = profileRepository.findByUserId(profileData.getUserId());
-
         if (existingProfileOpt.isPresent()) {
             Profile profileToUpdate = existingProfileOpt.get();
-
             if (!profileToUpdate.getSlug().equals(profileData.getSlug()) && profileRepository.existsBySlugAndIdNot(profileData.getSlug(), profileToUpdate.getId())) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "URL tùy chỉnh này đã được sử dụng.");
             }
@@ -77,7 +75,6 @@ public class ProfileController {
             profileToUpdate.setSocialImage(profileData.getSocialImage());
             profileToUpdate.setGoogleAnalyticsId(profileData.getGoogleAnalyticsId());
             profileToUpdate.setFacebookPixelId(profileData.getFacebookPixelId());
-
             return profileRepository.save(profileToUpdate);
         } else {
             Profile newProfile = new Profile();
@@ -95,7 +92,6 @@ public class ProfileController {
             newProfile.setSocialImage(profileData.getSocialImage());
             newProfile.setGoogleAnalyticsId(profileData.getGoogleAnalyticsId());
             newProfile.setFacebookPixelId(profileData.getFacebookPixelId());
-
             String baseSlug = generateSlug(profileData.getDisplayName());
             String finalSlug = baseSlug;
             int counter = 1;
@@ -104,7 +100,6 @@ public class ProfileController {
                 finalSlug = baseSlug + "-" + counter;
             }
             newProfile.setSlug(finalSlug);
-
             return profileRepository.save(newProfile);
         }
     }
@@ -113,40 +108,23 @@ public class ProfileController {
     public ResponseEntity<Map<String, Object>> updateSettings(@RequestBody SettingsUpdateDTO settingsDTO) {
         Profile profile = profileRepository.findByUserId(settingsDTO.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy profile"));
-
-        if (settingsDTO.getShowStats() != null) {
-            profile.setShowStats(settingsDTO.getShowStats());
-        }
-        if (settingsDTO.getEmailNotifications() != null) {
-            profile.setEmailNotifications(settingsDTO.getEmailNotifications());
-        }
-        if (settingsDTO.getAnalyticsEnabled() != null) {
-            profile.setAnalyticsEnabled(settingsDTO.getAnalyticsEnabled());
-        }
-        if (settingsDTO.getPublicProfile() != null) {
-            profile.setPublicProfile(settingsDTO.getPublicProfile());
-        }
-
+        if (settingsDTO.getShowStats() != null) profile.setShowStats(settingsDTO.getShowStats());
+        if (settingsDTO.getEmailNotifications() != null) profile.setEmailNotifications(settingsDTO.getEmailNotifications());
+        if (settingsDTO.getAnalyticsEnabled() != null) profile.setAnalyticsEnabled(settingsDTO.getAnalyticsEnabled());
+        if (settingsDTO.getPublicProfile() != null) profile.setPublicProfile(settingsDTO.getPublicProfile());
         profileRepository.save(profile);
-
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Cập nhật cài đặt thành công"
-        ));
+        return ResponseEntity.ok(Map.of("success", true, "message", "Cập nhật cài đặt thành công"));
     }
 
     @PostMapping("/{slug}/view")
-    public ResponseEntity<Profile> recordProfileView(@PathVariable String slug) { // <-- Thay đổi kiểu trả về
-        Profile updatedProfile = profileService.recordProfileView(slug); // <-- Nhận lại profile
-        return ResponseEntity.ok(updatedProfile); // <-- Trả về cho Front-end
+    public ResponseEntity<Profile> recordProfileView(@PathVariable String slug) {
+        Profile updatedProfile = profileService.recordProfileView(slug);
+        return ResponseEntity.ok(updatedProfile);
     }
 
     @GetMapping("/analytics/{userId}")
-    public ResponseEntity<AnalyticsDTO> getAnalytics(
-            @PathVariable String userId,
-            @RequestParam(name = "range", defaultValue = "7d") String range) { // <-- THAY ĐỔI Ở ĐÂY
-
-        AnalyticsDTO analytics = profileService.getAnalytics(userId, range); // <-- TRUYỀN `range` VÀO SERVICE
+    public ResponseEntity<AnalyticsDTO> getAnalytics(@PathVariable String userId, @RequestParam(name = "range", defaultValue = "7d") String range) {
+        AnalyticsDTO analytics = profileService.getAnalytics(userId, range);
         return ResponseEntity.ok(analytics);
     }
 
@@ -163,12 +141,14 @@ public class ProfileController {
         return profileRepository.save(profile);
     }
 
+    // --- ENDPOINT NÀY ĐÃ ĐƯỢC THAY ĐỔI ĐỂ GỌI SERVICE ---
     @GetMapping("/mine/{userId}")
     public ResponseEntity<Profile> getMyProfile(@PathVariable String userId) {
-        return profileRepository.findByUserId(userId)
+        return profileService.getMyProfile(userId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+    // ---------------------------------------------------
 
     @GetMapping("/{slug}")
     public ResponseEntity<Profile> getProfileBySlug(@PathVariable String slug) {
@@ -180,15 +160,9 @@ public class ProfileController {
     @GetMapping("/stats/{userId}")
     public ResponseEntity<Map<Long, Long>> getStats(@PathVariable String userId) {
         Profile profile = profileRepository.findByUserId(userId).orElse(null);
-        if (profile == null) {
-            return ResponseEntity.notFound().build();
-        }
-        if (profile.getBlocks() == null || profile.getBlocks().isEmpty()) {
-            return ResponseEntity.ok(Map.of());
-        }
-        List<Long> blockIds = profile.getBlocks().stream()
-                .map(ContentBlock::getId)
-                .collect(Collectors.toList());
+        if (profile == null) return ResponseEntity.notFound().build();
+        if (profile.getBlocks() == null || profile.getBlocks().isEmpty()) return ResponseEntity.ok(Map.of());
+        List<Long> blockIds = profile.getBlocks().stream().map(ContentBlock::getId).collect(Collectors.toList());
         Map<Long, Long> stats = clickLogRepository.countByBlockIdIn(blockIds).stream()
                 .collect(Collectors.toMap(ClickCount::getBlockId, ClickCount::getCount));
         return ResponseEntity.ok(stats);
@@ -198,13 +172,11 @@ public class ProfileController {
     public ResponseEntity<GuestbookMessage> addGuestbookMessage(@PathVariable String slug, @Valid @RequestBody GuestbookMessageDTO messageDTO) {
         Profile profile = profileRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile không tồn tại"));
-
         GuestbookMessage newMessage = new GuestbookMessage();
         newMessage.setProfile(profile);
         newMessage.setAuthorName(messageDTO.getAuthorName());
         newMessage.setMessageContent(messageDTO.getMessageContent());
         newMessage.setIsPublic(messageDTO.getIsPublic());
-
         guestbookMessageRepository.save(newMessage);
         return ResponseEntity.status(HttpStatus.CREATED).body(newMessage);
     }
@@ -237,31 +209,26 @@ public class ProfileController {
         guestbookMessageRepository.delete(message);
         return ResponseEntity.noContent().build();
     }
-    // Endpoint để lấy số tin nhắn chưa đọc
+
     @GetMapping("/guestbook/unread-count/{userId}")
     public ResponseEntity<Map<String, Long>> getUnreadMessageCount(@PathVariable String userId) {
         Profile profile = profileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile không tồn tại"));
-
         long unreadCount = guestbookMessageRepository.countByProfileIdAndIsReadFalse(profile.getId());
-
         return ResponseEntity.ok(Map.of("unreadCount", unreadCount));
     }
 
-    // Endpoint để đánh dấu tất cả là đã đọc
     @PostMapping("/guestbook/mark-as-read/{userId}")
     public ResponseEntity<Void> markMessagesAsRead(@PathVariable String userId) {
         Profile profile = profileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile không tồn tại"));
-
         guestbookMessageRepository.markAllAsReadByProfileId(profile.getId());
-
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/guestbook/comment-as-author")
     public ResponseEntity<GuestbookMessage> addAuthorComment(
-            @Valid @RequestBody AuthorCommentDTO commentDTO, // <-- THAY ĐỔI Ở ĐÂY
+            @Valid @RequestBody AuthorCommentDTO commentDTO,
             @RequestParam String userId) {
 
         Profile profile = profileRepository.findByUserId(userId)
@@ -270,7 +237,7 @@ public class ProfileController {
         GuestbookMessage newMessage = new GuestbookMessage();
         newMessage.setProfile(profile);
         newMessage.setAuthorName(profile.getDisplayName());
-        newMessage.setMessageContent(commentDTO.getMessageContent()); // <-- Lấy từ DTO mới
+        newMessage.setMessageContent(commentDTO.getMessageContent());
         newMessage.setIsPublic(true);
         newMessage.setIsRead(true);
         newMessage.setIsAuthor(true);
@@ -278,5 +245,4 @@ public class ProfileController {
         guestbookMessageRepository.save(newMessage);
         return ResponseEntity.status(HttpStatus.CREATED).body(newMessage);
     }
-
 }
