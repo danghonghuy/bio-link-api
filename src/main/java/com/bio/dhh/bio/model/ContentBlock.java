@@ -20,7 +20,8 @@ public class ContentBlock {
     @Lob
     @Column(nullable = false, columnDefinition="TEXT")
     private String data;
-
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    private boolean isEnabled = true;
     @Column(nullable = false)
     private int blockOrder;
 

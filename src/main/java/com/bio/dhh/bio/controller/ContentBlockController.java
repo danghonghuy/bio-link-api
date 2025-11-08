@@ -100,4 +100,30 @@ public class ContentBlockController {
 
         return ResponseEntity.ok().build();
     }
+    @PatchMapping("/{blockId}/status")
+    public ResponseEntity<ContentBlock> updateBlockStatus(@PathVariable Long blockId, @RequestBody Map<String, Boolean> payload) {
+        // Tìm block trong database bằng ID
+        ContentBlock block = blockRepository.findById(blockId).orElse(null);
+        if (block == null) {
+            // Nếu không tìm thấy, trả về lỗi 404
+            return ResponseEntity.notFound().build();
+        }
+
+        // Lấy giá trị isEnabled từ JSON gửi lên
+        Boolean isEnabled = payload.get("isEnabled");
+        if (isEnabled == null) {
+            // Nếu JSON không có key "isEnabled", trả về lỗi bad request
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Cập nhật trạng thái cho block
+        block.setEnabled(isEnabled);
+        // ^^^ LƯU Ý: Đảm bảo class ContentBlock của bạn có phương thức setEnabled(boolean isEnabled)
+
+        // Lưu lại block đã cập nhật vào database
+        ContentBlock updatedBlock = blockRepository.save(block);
+
+        // Trả về block đã cập nhật với status 200 OK
+        return ResponseEntity.ok(updatedBlock);
+    }
 }
