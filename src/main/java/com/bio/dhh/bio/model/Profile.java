@@ -3,6 +3,7 @@ package com.bio.dhh.bio.model;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -88,9 +89,11 @@ public class Profile {
             mappedBy = "profile",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
-            fetch = FetchType.EAGER
+            fetch = FetchType.LAZY // THAY EAGER BẰNG LAZY
     )
+    // ----------------------------------------------------
     @OrderBy("blockOrder ASC")
     @JsonManagedReference
+    @ToString.Exclude // Thêm dòng này để tránh lỗi StackOverflow khi dùng Lombok
     private List<ContentBlock> blocks = new ArrayList<>();
 }
