@@ -6,7 +6,8 @@ import com.bio.dhh.bio.model.Profile;
 import com.bio.dhh.bio.repository.ClickLogRepository;
 import com.bio.dhh.bio.repository.ContentBlockRepository;
 import com.bio.dhh.bio.repository.ProfileRepository;
-import org.springframework.beans.factory.annotation.Autowired; // <-- THÊM DÒNG NÀY (NẾU CHƯA CÓ)
+import com.bio.dhh.bio.service.ContentBlockService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -20,12 +21,14 @@ public class ContentBlockController {
     private final ContentBlockRepository blockRepository;
     private final ProfileRepository profileRepository;
     private final ClickLogRepository clickLogRepository;
+    private final ContentBlockService blockService;
 
-    @Autowired // <-- ĐẢM BẢO CÓ @Autowired Ở ĐÂY
-    public ContentBlockController(ContentBlockRepository br, ProfileRepository pr, ClickLogRepository cr) {
+    @Autowired
+    public ContentBlockController(ContentBlockRepository br, ProfileRepository pr, ClickLogRepository cr, ContentBlockService bs) {
         this.blockRepository = br;
         this.profileRepository = pr;
         this.clickLogRepository = cr;
+        this.blockService = bs;
     }
 
     @PostMapping("/{userId}")
@@ -34,11 +37,9 @@ public class ContentBlockController {
         if (profile == null) {
             return ResponseEntity.notFound().build();
         }
-
         block.setProfile(profile);
         int lastOrder = profile.getBlocks().size();
         block.setBlockOrder(lastOrder);
-
         ContentBlock savedBlock = blockRepository.save(block);
         return ResponseEntity.ok(savedBlock);
     }
@@ -49,10 +50,8 @@ public class ContentBlockController {
         if (block == null) {
             return ResponseEntity.notFound().build();
         }
-
         block.setType(updatedBlockData.getType());
         block.setData(updatedBlockData.getData());
-
         return ResponseEntity.ok(blockRepository.save(block));
     }
 
@@ -71,13 +70,11 @@ public class ContentBlockController {
         if (profile == null) {
             return ResponseEntity.notFound().build();
         }
-
         List<ContentBlock> blocks = profile.getBlocks();
         Map<Long, ContentBlock> blockMap = new HashMap<>();
         for (ContentBlock block : blocks) {
             blockMap.put(block.getId(), block);
         }
-
         for (int i = 0; i < orderedBlockIds.size(); i++) {
             ContentBlock block = blockMap.get(orderedBlockIds.get(i));
             if (block != null) {
@@ -88,42 +85,24 @@ public class ContentBlockController {
         return ResponseEntity.ok().build();
     }
 
+    @PatchMapping("/{blockId}/status")
+    public ResponseEntity<ContentBlock> updateBlockStatus(@PathVariable Long blockId, @RequestBody Map<String, Boolean> payload) {
+        Boolean isEnabled = payload.get("isEnabled");
+        if (isEnabled == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        ContentBlock updatedBlock = blockService.updateBlockStatus(blockId, isEnabled);
+        return ResponseEntity.ok(updatedBlock);
+    }
+
     @PostMapping("/{blockId}/click")
     public ResponseEntity<Void> recordClick(@PathVariable Long blockId) {
         if (!blockRepository.existsById(blockId)) {
             return ResponseEntity.notFound().build();
         }
-
         ClickLog log = new ClickLog();
         log.setBlockId(blockId);
         clickLogRepository.save(log);
-
         return ResponseEntity.ok().build();
-    }
-    @PatchMapping("/{blockId}/status")
-    public ResponseEntity<ContentBlock> updateBlockStatus(@PathVariable Long blockId, @RequestBody Map<String, Boolean> payload) {
-        // Tìm block trong database bằng ID
-        ContentBlock block = blockRepository.findById(blockId).orElse(null);
-        if (block == null) {
-            // Nếu không tìm thấy, trả về lỗi 404
-            return ResponseEntity.notFound().build();
-        }
-
-        // Lấy giá trị isEnabled từ JSON gửi lên
-        Boolean isEnabled = payload.get("isEnabled");
-        if (isEnabled == null) {
-            // Nếu JSON không có key "isEnabled", trả về lỗi bad request
-            return ResponseEntity.badRequest().build();
-        }
-
-        // Cập nhật trạng thái cho block
-        block.setEnabled(isEnabled);
-        // ^^^ LƯU Ý: Đảm bảo class ContentBlock của bạn có phương thức setEnabled(boolean isEnabled)
-
-        // Lưu lại block đã cập nhật vào database
-        ContentBlock updatedBlock = blockRepository.save(block);
-
-        // Trả về block đã cập nhật với status 200 OK
-        return ResponseEntity.ok(updatedBlock);
     }
 }
