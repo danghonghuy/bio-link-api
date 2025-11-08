@@ -14,7 +14,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "http://localhost:3000",                  // Dành cho môi trường phát triển (dev)
                         "https://bio-link-frontend.vercel.app"  // Dành cho môi trường sản phẩm (production)
                 )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Các phương thức cho phép
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")// Các phương thức cho phép
                 .allowedHeaders("*")    // Cho phép tất cả các header
                 .allowCredentials(true); // Cho phép gửi cookie (nếu cần sau này)
     }
