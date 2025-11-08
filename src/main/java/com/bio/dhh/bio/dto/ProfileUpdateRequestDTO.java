@@ -25,7 +25,8 @@ public class ProfileUpdateRequestDTO {
 
     @Size(max = 255, message = "Lựa chọn background không hợp lệ")
     private String background;
-
+    @Size(max = 1000, message = "URL ảnh đại diện quá dài")
+    private String avatarUrl;
     @Min(value = 0, message = "Độ mờ tối thiểu là 0")
     @Max(value = 100, message = "Độ mờ tối đa là 100")
     private Integer backgroundImageOpacity;

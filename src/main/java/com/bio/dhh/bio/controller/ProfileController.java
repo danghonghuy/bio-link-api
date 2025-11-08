@@ -63,7 +63,7 @@ public class ProfileController {
             if (!profileToUpdate.getSlug().equals(profileData.getSlug()) && profileRepository.existsBySlugAndIdNot(profileData.getSlug(), profileToUpdate.getId())) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "URL tùy chỉnh này đã được sử dụng.");
             }
-
+            profileToUpdate.setAvatarUrl(profileData.getAvatarUrl());
             profileToUpdate.setDisplayName(profileData.getDisplayName());
             profileToUpdate.setDescription(profileData.getDescription());
             profileToUpdate.setSlug(profileData.getSlug());
@@ -82,6 +82,7 @@ public class ProfileController {
         } else {
             Profile newProfile = new Profile();
             newProfile.setUserId(profileData.getUserId());
+            newProfile.setAvatarUrl(profileData.getAvatarUrl());
             newProfile.setDisplayName(profileData.getDisplayName());
             newProfile.setDescription(profileData.getDescription());
             newProfile.setBackground(profileData.getBackground());
